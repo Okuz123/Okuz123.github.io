@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KHANDY Prediction System v2.2.0</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        canvas#particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            background: transparent;
+            display: none; /* Disabled for feature phones */
+        }
+
+        @media (min-width: 768px) {
+            canvas#particles {
+                display: block;
+            }
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 10px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #f1c40f;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            text-align: center;
+            color: #f1c40f;
+            margin-bottom: 10px;
+        }
+
+        h2, h3 {
+            color: #f1c40f;
+        }
+
+        .banner {
+            background: linear-gradient(90deg, #f1c40f, #e67e22);
+            padding: 10px;
+            text-align: center;
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #1e1e2f;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .login-page, .prediction-page, .admin-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin: 10px;
+        }
+
+        .prediction-page input, button, .login-page input, .admin-panel input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .login-page input[type="password"], .admin-panel input[type="password"] {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border: 1px solid rgba(241, 196, 15, 0.3);
+            -webkit-text-security: disc; /* Masks input */
+        }
+
+        .prediction-page input, .login-page input[type="text"], .admin-panel input[type="text"] {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border: 1px solid rgba(241, 196, 15, 0.3);
+        }
+
+        .prediction-page input:focus, .login-page input:focus, .admin-panel input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.25);
+            border-color: #f1c40f;
+        }
+
+        button {
+            background: linear-gradient(45deg, #f1c40f, #e67e22);
+            color: #1e1e2f;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover:not(:disabled) {
+            background: linear-gradient(45deg, #e67e22, #f1c40f);
+        }
+
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        button.loading::after {
+            content: ' ⏳';
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+            margin: 5px 0;
+            text-align: center;
+            font-size: 0.8em;
+        }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        @media (min-width: 768px) {
+            .number-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .number-box {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 5px;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid rgba(241, 196, 15, 0.3);
+        }
+
+        .number-box input {
+            width: 100%;
+            height: 40px;
+            background: transparent;
+            color: #fff;
+            text-align: center;
+            font-size: 1.2em;
+            border: none;
+            -webkit-appearance: none;
+            -moz-appearance: textfield;
+        }
+
+        .number-box input::-webkit-outer-spin-button,
+        .number-box input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+        }
+
+        .number-box.odd {
+            background: #2ecc71;
+        }
+
+        .number-box.even {
+            background: #e74c3c;
+        }
+
+        .signal {
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+
+        .signal .big { color: #3498db; }
+        .signal .small { color: #f1c40f; }
+        .signal .red { color: #e74c3c; }
+        .signal .green { color: #2ecc71; }
+
+        #finalPredictionResult {
+            font-size: 1.2em;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        #predictionResults, #historyList {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            border: 1px solid rgba(241, 196, 15, 0.3);
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 1000;
+            max-width: 95%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid rgba(241, 196, 15, 0.5);
+        }
+
+        .popup-content {
+            text-align: center;
+        }
+
+        .popup-content h2 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .popup-content .final-prediction {
+            font-size: 1.2em;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+
+        .popup button {
+            margin-top: 10px;
+            width: auto;
+            padding: 8px 15px;
+        }
+
+        #feedbackSection {
+            display: none;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        #periodNumber, #resultsPeriodNumber, #linearPeriodNumber, #numberPeriodNumber, #signalPeriodNumber {
+            font-size: 1.2em;
+            color: #f1c40f;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .theme-toggle, .sound-toggle {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+
+        .sound-toggle {
+            top: 40px;
+        }
+
+        body.light-mode {
+            background: #f0f0f5;
+            color: #1e1e2f;
+        }
+
+        body.light-mode .prediction-page, body.light-mode .login-page, body.light-mode .admin-panel {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        body.light-mode .prediction-page input, body.light-mode .login-page input, body.light-mode .admin-panel input {
+            background: rgba(0, 0, 0, 0.05);
+            color: #1e1e2f;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+        }
+
+        body.light-mode .number-box {
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.2);
+        }
+
+        body.light-mode #predictionResults, body.light-mode #historyList {
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .quick-input {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 5px;
+            margin: 10px 0;
+        }
+
+        .quick-input button {
+            width: 40px;
+            height: 40px;
+            font-size: 1em;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+        }
+
+        .timer {
+            font-size: 1.2em;
+            text-align: center;
+            margin: 10px 0;
+            color: #f1c40f;
+        }
+
+        .accuracy-tracker {
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .accuracy-tracker progress {
+            width: 100%;
+            height: 15px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .accuracy-tracker progress::-webkit-progress-bar {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+
+        .accuracy-tracker progress::-webkit-progress-value {
+            background: linear-gradient(45deg, #f1c40f, #e67e22);
+            border-radius: 5px;
+        }
+
+        .feedback-rating {
+            margin-top: 10px;
+        }
+
+        .share-button {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+        }
+
+        #historyTableBody tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .analytics-section {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+        }
+
+        .analytics-chart {
+            width: 100%;
+            height: 200px;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 480px) {
+            .logo, h1 {
+                font-size: 1.2em;
+            }
+
+            .banner {
+                font-size: 0.8em;
+            }
+
+            .number-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .popup {
+                width: 90%;
+                padding: 10px;
+            }
+
+            .popup-content h2 {
+                font-size: 1.2em;
+            }
+
+            .popup-content .final-prediction {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+    <button class="sound-toggle" onclick="toggleSound()">🔊</button>
+    <canvas id="particles"></canvas>
+    <div class="container">
+        <!-- Login Page -->
+        <div id="loginPage" class="login-page" style="display: block;">
+            <h2>Login to KHANDY</h2>
+            <input type="password" id="loginKeyInput" placeholder="Enter KEYLOGIN">
+            <button onclick="handleLogin()">Login</button>
+            <button onclick="showAdminLogin()">Admin Login</button>
+            <div id="loginError" class="error"></div>
+        </div>
+
+        <!-- Admin Login Popup -->
+        <div id="adminLoginPopup" class="popup">
+            <div class="popup-content">
+                <h2>Admin Login</h2>
+                <input type="password" id="adminKeyInput" placeholder="Enter ADMINKEY">
+                <button onclick="handleAdminLogin()">Login as Admin</button>
+                <button onclick="closeAdminLogin()">Close</button>
+                <div id="adminLoginError" class="error"></div>
+            </div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="adminPanel" class="admin-panel" style="display: none;">
+            <h2>Admin Panel</h2>
+            <div class="admin-stats">
+                <h3>System Statistics</h3>
+                <p id="totalUsers">Total Users: 0</p>
+                <p id="totalPredictions">Total Predictions: 0</p>
+                <p id="averageAccuracy">Average Accuracy: 0%</p>
+                <canvas id="analyticsChart" class="analytics-chart"></canvas>
+            </div>
+            <button onclick="clearAllData()">Clear All Data</button>
+            <button onclick="exportUserData()">Export User Data</button>
+            <button onclick="logoutAdmin()">Logout</button>
+        </div>
+
+        <!-- Prediction Page -->
+        <div id="predictionPage" class="prediction-page" style="display: none;">
+            <div class="logo">KHANDY Prediction System</div>
+            <div class="banner">MAINTAIN 3 LEVEL AND PLAY RESPONSIBLY</div>
+            <h1>Prediction Dashboard</h1>
+            <div class="news-updates" style="margin: 10px 0; text-align: center;">
+                <h3>Recent Updates</h3>
+                <p>🎉 Version 2.2.0: Added login system, admin panel, pi-based prediction, and advanced analytics! 🎉</p>
+            </div>
+            <div id="periodNumber">Period: Loading...</div>
+            <div class="timer" id="countdownTimer">Next Round: 60s</div>
+            <div class="analytics-section">
+                <h3>Advanced Analytics</h3>
+                <p id="piPrediction">Pi-based Prediction: N/A</p>
+                <p id="userStats">User Stats: 0 predictions made</p>
+            </div>
+            <div class="number-grid">
+                <div class="number-box" id="box1">
+                    <input type="number" id="num1" min="0" max="9" oninput="updateSignal(1)" onkeypress="if(event.key === 'Enter') startHack()" maxlength="1">
+                    <div class="signal" id="signal1"></div>
+                </div>
+                <div class="number-box" id="box2">
+                    <input type="number" id="num2" min="0" max="9" oninput="updateSignal(2)" onkeypress="if(event.key === 'Enter') startHack()" maxlength="1">
+                    <div class="signal" id="signal2"></div>
+                </div>
+                <div class="number-box" id="box3">
+                    <input type="number" id="num3" min="0" max="9" oninput="updateSignal(3)" onkeypress="if(event.key === 'Enter') startHack()" maxlength="1">
+                    <div class="signal" id="signal3"></div>
+                </div>
+                <div class="number-box" id="box4">
+                    <input type="number" id="num4" min="0" max="9" oninput="updateSignal(4)" onkeypress="if(event.key === 'Enter') startHack()" maxlength="1">
+                    <div class="signal" id="signal4"></div>
+                </div>
+                <div class="number-box" id="box5">
+                    <input type="number" id="num5" min="0" max="9" oninput="updateSignal(5)" onkeypress="if(event.key === 'Enter') startHack()" maxlength="1">
+                    <div class="signal" id="signal5"></div>
+                </div>
+                <div class="number-box" id="box6">
+                    <input type="number" id="num6" min="0" max="9" oninput="updateSignal(6)" onkeypress="if(event.key === 'Enter') startHack()" maxlength="1">
+                    <div class="signal" id="signal6"></div>
+                </div>
+                <div class="number-box" id="box7">
+                    <input type="number" id="num7" min="0" max="9" oninput="updateSignal(7)" onkeypress="if(event.key === 'Enter') startHack()" maxlength="1">
+                    <div class="signal" id="signal7"></div>
+                </div>
+                <div class="number-box" id="box8">
+                    <input type="number" id="num8" min="0" max="9" oninput="updateSignal(8)" onkeypress="if(event.key === 'Enter') startHack()" maxlength="1">
+                    <div class="signal" id="signal8"></div>
+                </div>
+            </div>
+            <div class="quick-input">
+                <button onclick="quickFill(0)">0</button>
+                <button onclick="quickFill(1)">1</button>
+                <button onclick="quickFill(2)">2</button>
+                <button onclick="quickFill(3)">3</button>
+                <button onclick="quickFill(4)">4</button>
+                <button onclick="quickFill(5)">5</button>
+                <button onclick="quickFill(6)">6</button>
+                <button onclick="quickFill(7)">7</button>
+                <button onclick="quickFill(8)">8</button>
+                <button onclick="quickFill(9)">9</button>
+            </div>
+            <div id="finalPredictionResult"></div>
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px;">
+                <button id="startHackButton" onclick="startHack()" style="flex: 1;">START HACK</button>
+                <button onclick="showNumberPopup()" style="flex: 1;">Number Prediction</button>
+                <button onclick="showSignalPopup()" style="flex: 1;">Big/Small Signal</button>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px; margin-top: 5px;">
+                <button onclick="clearInputs()" style="flex: 1;">Clear Inputs</button>
+                <button onclick="showLinearPopup()" style="flex: 1;">Linear Gradient Analysis</button>
+                <button onclick="logoutUser()" style="flex: 1;">Logout</button>
+            </div>
+            <div class="accuracy-tracker">
+                <h3>Prediction Accuracy</h3>
+                <progress id="accuracyProgress" value="0" max="100"></progress>
+                <p id="accuracyText">Accuracy: 0% (0/0)</p>
+            </div>
+            <div id="predictionResults"></div>
+            <div id="feedbackSection">
+                <h3>Feedback</h3>
+                <input type="number" id="actualResult" min="0" max="9" placeholder="Enter Actual Result (0-9)">
+                <div class="feedback-rating">
+                    <label>Rate this prediction:</label>
+                    <select id="feedbackRating">
+                        <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+                        <option value="4">⭐⭐⭐⭐ (4/5)</option>
+                        <option value="3">⭐⭐⭐ (3/5)</option>
+                        <option value="2">⭐⭐ (2/5)</option>
+                        <option value="1">⭐ (1/5)</option>
+                    </select>
+                </div>
+                <button onclick="submitFeedback()">Submit Feedback</button>
+            </div>
+            <div id="historyList">
+                <h3>Prediction History</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+                    <thead>
+                        <tr style="background: rgba(255, 255, 255, 0.1);">
+                            <th style="padding: 5px; border-bottom: 1px solid #fff;">Input</th>
+                            <th style="padding: 5px; border-bottom: 1px solid #fff;">Prediction</th>
+                            <th style="padding: 5px; border-bottom: 1px solid #fff;">Big/Small</th>
+                            <th style="padding: 5px; border-bottom: 1px solid #fff;">Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody"></tbody>
+                </table>
+            </div>
+            <button onclick="downloadHistory()">Download History</button>
+            <div class="customer-service" style="margin-top: 10px; text-align: center;">
+                <h3>Customer Service</h3>
+                <p>Email: <a href="mailto:okhanday891@gmail.com" style="color: #f1c40f;">okhanday891@gmail.com</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="resultsPopup" class="popup">
+        <div class="popup-content">
+            <h2>Final Prediction</h2>
+            <div id="resultsPeriodNumber">Period: Loading...</div>
+            <div class="final-prediction" id="finalResults"></div>
+            <button class="share-button" onclick="sharePrediction()">Share Prediction</button>
+            <button onclick="closeResultsPopup()">Close</button>
+        </div>
+    </div>
+
+    <div id="linearPopup" class="popup">
+        <div class="popup-content">
+            <h2>Linear Gradient Prediction</h2>
+            <div id="linearPeriodNumber">Period: Loading...</div>
+            <div class="final-prediction" id="linearResult"></div>
+            <button onclick="closeLinearPopup()">Close</button>
+        </div>
+    </div>
+
+    <div id="numberPopup" class="popup">
+        <div class="popup-content">
+            <h2>Number Prediction</h2>
+            <div id="numberPeriodNumber">Period: Loading...</div>
+            <div class="final-prediction" id="numberResult"></div>
+            <button onclick="closeNumberPopup()">Close</button>
+        </div>
+    </div>
+
+    <div id="signalPopup" class="popup">
+        <div class="popup-content">
+            <h2>Big/Small Signal</h2>
+            <div id="signalPeriodNumber">Period: Loading...</div>
+            <div class="final-prediction" id="signalResult"></div>
+            <button onclick="closeSignalPopup()">Close</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Constants for authentication
+        const ADMINKEY = "KHANDY_ADMIN_2025";
+        const KEYLOGIN = "KHANDY_USER_2025";
+
+        // Placeholder for 100,000 pi digits (replace with actual digits)
+        const piDigits = "31415926535897932384..."; // Add your 100,000 digits here
+
+        // Session Management
+        let isAuthenticated = false;
+        let isAdmin = false;
+        let userSession = null;
+        let lastPrediction = null;
+
+        // Sound Effects
+        let soundEnabled = false;
+        const clickSound = new Audio('https://www.soundjay.com/buttons/button-1.mp3');
+        const predictionSound = new Audio('https://www.soundjay.com/misc/magic-chime-01.mp3');
+
+        function playSound(sound) {
+            if (soundEnabled) {
+                sound.play().catch(error => console.error('Sound play error:', error));
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.querySelector('.sound-toggle').textContent = soundEnabled ? '🔊' : '🔇';
+        }
+
+        // Particle Background
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particlesArray = [];
+        const numberOfParticles = 20;
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.color = `hsl(${Math.random() * 360}, 60%, 60%)`;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.size > 0.2) this.size -= 0.05;
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            if (window.innerWidth >= 768) {
+                for (let i = 0; i < numberOfParticles; i++) {
+                    particlesArray.push(new Particle());
+                }
+            }
+        }
+
+        function animateParticles() {
+            if (window.innerWidth >= 768) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (let i = 0; i < particlesArray.length; i++) {
+                    particlesArray[i].update();
+                    particlesArray[i].draw();
+                    if (particlesArray[i].size <= 0.2) {
+                        particlesArray.splice(i, 1);
+                        i--;
+                        particlesArray.push(new Particle());
+                    }
+                }
+                requestAnimationFrame(animateParticles);
+            }
+        }
+
+        initParticles();
+        animateParticles();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Theme Toggle
+        function toggleTheme() {
+            playSound(clickSound);
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        }
+
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+
+        // Period Number Logic
+        function pad(n, width = 2) {
+            return n.toString().padStart(width, '0');
+        }
+
+        function updatePeriodNumber() {
+            const now = new Date();
+            const baseTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+            const baseRoundNumber = 9671;
+
+            const diffMinutes = Math.floor((now - baseTime) / 60000);
+            const currentRoundNumber = baseRoundNumber + diffMinutes;
+
+            const year = now.getFullYear();
+            const month = pad(now.getMonth() + 1);
+            const day = pad(now.getDate());
+            const round = pad(currentRoundNumber, 5);
+            const systemPrefix = "1000";
+            const periodNumber = `${year}${month}${day}${systemPrefix}${round}`;
+
+            document.getElementById("periodNumber").textContent = `Period: ${periodNumber}`;
+            document.getElementById("resultsPeriodNumber").textContent = `Period: ${periodNumber}`;
+            document.getElementById("linearPeriodNumber").textContent = `Period: ${periodNumber}`;
+            document.getElementById("numberPeriodNumber").textContent = `Period: ${periodNumber}`;
+            document.getElementById("signalPeriodNumber").textContent = `Period: ${periodNumber}`;
+        }
+
+        updatePeriodNumber();
+        setInterval(updatePeriodNumber, 1000);
+
+        // Countdown Timer
+        function updateCountdownTimer() {
+            const now = new Date();
+            const seconds = now.getSeconds();
+            const remainingSeconds = 60 - seconds;
+            document.getElementById('countdownTimer').textContent = `Next Round: ${remainingSeconds}s`;
+            if (remainingSeconds <= 10) {
+                document.getElementById('countdownTimer').style.color = '#e74c3c';
+            } else {
+                document.getElementById('countdownTimer').style.color = '#f1c40f';
+            }
+        }
+
+        updateCountdownTimer();
+        setInterval(updateCountdownTimer, 1000);
+
+        // Login Handling
+        function handleLogin() {
+            const loginKey = document.getElementById('loginKeyInput').value.trim();
+            const loginError = document.getElementById('loginError');
+
+            if (loginKey.toUpperCase() === KEYLOGIN.toUpperCase()) { // Case-insensitive comparison
+                isAuthenticated = true;
+                userSession = {
+                    id: Math.random().toString(36).substring(2),
+                    loginTime: new Date().toISOString(),
+                    predictionsMade: 0
+                };
+                localStorage.setItem('userSession', JSON.stringify(userSession));
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('predictionPage').style.display = 'block';
+                loadPredictionHistory();
+                updateAccuracy();
+                updateUserStats();
+            } else {
+                loginError.textContent = 'Invalid KEYLOGIN. Please try again.';
+                loginError.classList.add('shake');
+                setTimeout(() => loginError.classList.remove('shake'), 500);
+            }
+        }
+
+        // Admin Login
+        function showAdminLogin() {
+            document.getElementById('adminLoginPopup').style.display = 'flex';
+        }
+
+        function closeAdminLogin() {
+            document.getElementById('adminLoginPopup').style.display = 'none';
+            document.getElementById('adminKeyInput').value = '';
+            document.getElementById('adminLoginError').textContent = '';
+        }
+
+        function handleAdminLogin() {
+            const adminKey = document.getElementById('adminKeyInput').value.trim();
+            const adminError = document.getElementById('adminLoginError');
+
+            if (adminKey.toUpperCase() === ADMINKEY.toUpperCase()) { // Case-insensitive comparison
+                isAdmin = true;
+                isAuthenticated = true;
+                document.getElementById('adminLoginPopup').style.display = 'none';
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                loadAdminStats();
+            } else {
+                adminError.textContent = 'Invalid ADMINKEY. Please try again.';
+                adminError.classList.add('shake');
+                setTimeout(() => adminError.classList.remove('shake'), 500);
+            }
+        }
+
+        function logoutUser() {
+            isAuthenticated = false;
+            userSession = null;
+            localStorage.removeItem('userSession');
+            document.getElementById('predictionPage').style.display = 'none';
+            document.getElementById('loginPage').style.display = 'block';
+        }
+
+        // Admin Functions
+        function loadAdminStats() {
+            const history = validatePredictionHistory();
+            const feedback = JSON.parse(localStorage.getItem('feedbackHistory')) || [];
+            const users = JSON.parse(localStorage.getItem('userSessions')) || [];
+
+            document.getElementById('totalUsers').textContent = `Total Users: ${users.length}`;
+            document.getElementById('totalPredictions').textContent = `Total Predictions: ${history.length}`;
+            const accuracy = feedback.length > 0 ?
+                (feedback.filter(f => f.predicted === f.actual).length / feedback.length * 100).toFixed(2) : 0;
+            document.getElementById('averageAccuracy').textContent = `Average Accuracy: ${accuracy}%`;
+
+            drawAnalyticsChart(history, feedback);
+        }
+
+        function drawAnalyticsChart(history, feedback) {
+            const ctx = document.getElementById('analyticsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: history.slice(-10).map((_, i) => `Prediction ${i + 1}`),
+                    datasets: [{
+                        label: 'Prediction Confidence',
+                        data: history.slice(-10).map(h => parseFloat(h.predictions.confidence)),
+                        borderColor: '#f1c40f',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, max: 100 }
+                    }
+                }
+            });
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear all user data?')) {
+                localStorage.clear();
+                loadAdminStats();
+                alert('All data cleared successfully.');
+            }
+        }
+
+        function exportUserData() {
+            const history = validatePredictionHistory();
+            const feedback = JSON.parse(localStorage.getItem('feedbackHistory')) || [];
+            const users = JSON.parse(localStorage.getItem('userSessions')) || [];
+
+            const data = {
+                users,
+                predictions: history,
+                feedback
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'khandy_user_data.json';
+            link.click();
+        }
+
+        function logoutAdmin() {
+            isAdmin = false;
+            isAuthenticated = false;
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('loginPage').style.display = 'block';
+        }
+
+        // Update Signals
+        function updateSignal(index) {
+            const input = document.getElementById(`num${index}`);
+            const box = document.getElementById(`box${index}`);
+            const signalDiv = document.getElementById(`signal${index}`);
+            const value = input.value.trim();
+
+            box.classList.remove('odd', 'even');
+            signalDiv.innerHTML = '';
+
+            if (value === '') {
+                return;
+            }
+
+            const num = parseInt(value);
+            if (isNaN(num) || num < 0 || num > 9) {
+                signalDiv.innerHTML = `<span class="error">Enter 0-9</span>`;
+                input.classList.add('shake');
+                setTimeout(() => input.classList.remove('shake'), 500);
+                return;
+            }
+
+            const color = num % 2 === 0 ? 'Red' : 'Green';
+            const size = num <= 4 ? 'Small' : 'Big';
+            box.classList.add(num % 2 === 0 ? 'even' : 'odd');
+            signalDiv.innerHTML = `<span class="${color.toLowerCase()}">${color}</span> | <span class="${size.toLowerCase()}">${size}</span>`;
+        }
+
+        // Quick Input
+        function quickFill(number) {
+            playSound(clickSound);
+            for (let i = 1; i <= 8; i++) {
+                const input = document.getElementById(`num${i}`);
+                if (input.value === '') {
+                    input.value = number;
+                    updateSignal(i);
+                    break;
+                }
+            }
+        }
+
+        // Clear Inputs
+        function clearInputs() {
+            playSound(clickSound);
+            for (let i = 1; i <= 8; i++) {
+                document.getElementById(`num${i}`).value = '';
+                updateSignal(i);
+            }
+            document.getElementById('finalPredictionResult').innerHTML = '';
+            document.getElementById('predictionResults').innerHTML = '';
+            document.getElementById('feedbackSection').style.display = 'none';
+            document.getElementById('piPrediction').innerHTML = 'Pi-based Prediction: N/A';
+        }
+
+        // Validate and Reset Local Storage
+        function validatePredictionHistory() {
+            let history = [];
+            try {
+                history = JSON.parse(localStorage.getItem('predictionHistory')) || [];
+                if (!Array.isArray(history)) {
+                    throw new Error('Invalid history format');
+                }
+                history = history.filter(entry => {
+                    return entry.input && Array.isArray(entry.input) && entry.input.length === 8 &&
+                           entry.predictions && typeof entry.predictions === 'object' &&
+                           typeof entry.predictions.ensemble === 'number' &&
+                           typeof entry.predictions.bigSmall === 'string' &&
+                           typeof entry.predictions.confidence === 'string';
+                });
+            } catch (error) {
+                console.error('Resetting corrupted prediction history:', error);
+                history = [];
+            }
+            localStorage.setItem('predictionHistory', JSON.stringify(history));
+            return history;
+        }
+
+        // Prediction Weights
+        const predictionWeights = {
+            statisticalAnalysis: 0.18,
+            patternRecognition: 0.14,
+            trendAnalysis: 0.14,
+            linearGradient: 0.10,
+            innerImage: 0.10,
+            composite: 0.05,
+            gaussian: 0.05,
+            matrix: 0.05,
+            combined: 0.05,
+            trigonometric: 0.03,
+            fourier: 0.03,
+            polynomial: 0.02,
+            weightedMovingAverage: 0.02,
+            piBased: 0.10
+        };
+
+        // Fallback Prediction
+        function fallbackPrediction() {
+            const prediction = Math.floor(Math.random() * 10);
+            return {
+                prediction,
+                bigSmall: prediction <= 4 ? 'Small' : 'Big',
+                confidence: "50.00"
+            };
+        }
+
+        // Statistical Analysis
+        function statisticalAnalysis(nums) {
+            try {
+                const sum = nums.reduce((a, b) => a + b, 0);
+                const mean = sum / nums.length;
+                const variance = nums.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / nums.length || 1;
+                const predicted = Math.round((sum + Math.sqrt(variance)) % 10);
+                const confidence = Math.min(70 + (variance / 10), 85).toFixed(2);
+                return {
+                    prediction: predicted,
+                    bigSmall: predicted <= 4 ? 'Small' : 'Big',
+                    confidence
+                };
+            } catch (error) {
+                console.error('Error in statisticalAnalysis:', error);
+                return fallbackPrediction();
+            }
+        }
+
+        // Pattern Recognition
+        function patternRecognition(nums) {
+            try {
+                const sequence = nums.map(n => n % 3).join('');
+                const lastThree = sequence.slice(-3);
+                const prediction = lastThree === '000' || lastThree === '111' || lastThree === '222'
+                    ? nums[nums.length - 1]
+                    : Math.round(nums.reduce((a, b) => a + b, 0) / nums.length) % 10;
+                const confidence = sequence.split(lastThree).length > 2 ? 80 : 60;
+                return {
+                    prediction,
+                    bigSmall: prediction <= 4 ? 'Small' : 'Big',
+                    confidence: confidence.toFixed(2)
+                };
+            } catch (error) {
+                console.error('Error in patternRecognition:', error);
+                return fallbackPrediction();
+            }
+        }
+
+        // Trend Analysis
+        function trendAnalysis(nums) {
+            try {
+                const history = validatePredictionHistory();
+                const recent = history.slice(-5).map(entry => entry.predictions.ensemble);
+                if (recent.length < 3) {
+                    const prediction = Math.floor(Math.random() * 10);
+                    return {
+                        prediction,
+                        bigSmall: prediction <= 4 ? 'Small' : 'Big',
+                        confidence: "50.00"
+                    };
+                }
+
+                const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+                const trend = recent[recent.length - 1] - recent[recent.length - 2];
+                let predicted = Math.round((avg + trend) % 10);
+                if (predicted < 0) predicted += 10;
+                const consistency = recent.every(n => Math.abs(n - avg) < 3) ? 80 : 60;
+                return {
+                    prediction: predicted,
+                    bigSmall: predicted <= 4 ? 'Small' : 'Big',
+                    confidence: consistency.toFixed(2)
+                };
+            } catch (error) {
+                console.error('Error in trendAnalysis:', error);
+                return fallbackPrediction();
+            }
+        }
+
+        // Linear Gradient
+        let gradientHistory = [];
+        const maxGradientHistory = 10;
+
+        function linearGradient(nums) {
+            try {
+                const sum = nums.reduce((a, b) => a + b, 0) % 10;
+                gradientHistory.push(sum);
+                if (gradientHistory.length > maxGradientHistory) {
+                    gradientHistory.shift();
+                }
+
+                if (gradientHistory.length < 2) {
+                    const prediction = Math.floor(Math.random() * 10);
+                    return {
+                        prediction,
+                        bigSmall: prediction <= 4 ? 'Small' : 'Big',
+                        confidence: "20.00"
+                    };
+                }
+
+                const diffs = gradientHistory.slice(1).map((n, i) => n - gradientHistory[i]);
+                const lastDiff = diffs[diffs.length - 1] || 0;
+                let predicted = (gradientHistory[gradientHistory.length - 1] + lastDiff) % 10;
+                if (predicted < 0) predicted += 10;
+                const confidence = Math.min((1 - (diffs.filter(d => d !== lastDiff).length / diffs.length)) * 80 + 20, 75);
+                return {
+                    prediction: predicted,
+                    bigSmall: predicted <= 4 ? 'Small' : 'Big',
+                    confidence: confidence.toFixed(2)
+                };
+            } catch (error) {
+                console.error('Error in linearGradient:', error);
+                return fallbackPrediction();
+            }
+        }
+
+        // Inner Image
+        function innerImage(nums) {
+            try {
+                const pattern = nums.map(n => n % 3).reduce((a, b) => a + b, 0);
+                const predicted = Math.round((pattern * nums[nums.length - 1]) % 10);
+                const confidence = nums.every(n => n % 3 === nums[0] % 3) ? 80 : 60;
+                return {
+                    prediction: predicted,
+                    bigSmall: predicted <= 4 ? 'Small' : 'Big',
+                    confidence: confidence.toFixed(2)
+                };
+            } catch (error) {
+                console.error('Error in innerImage:', error);
+                return fallbackPrediction();
+            }
+        }
+
+        // Composite Analysis
+        function composite(nums) {
+            try {
+                const sum = nums.reduce((a, b) => a + b, 0);
+                const parity = nums.filter(n => n % 2 === 0).length > 4 ? 0 : 1;
+                const predicted = Math.round((sum + parity) % 10);
+                const confidence = sum > 40 ? 75 : 65;
+                return {
+                    prediction: predicted,
+                    bigSmall: predicted <= 4 ? 'Small' : 'Big',
+                    confidence: confidence.toFixed(2)
+                };
+            } catch (error) {
+                console.error('Error in composite:', error);
+                return fallbackPrediction();
+            }
+        }
+
+        // Gaussian Distribution
+        function gaussian(nums) {
+            try {
+                const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+                const stdDev = Math.sqrt(nums.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / nums.length || 1);
+                const predicted = Math.round((mean + stdDev) % 10);
+                const confidence = stdDev < 2 ? 80 : 60;
+                return {
+                    prediction: predicted,
+                    bigSmall: predicted <= 4 ? 'Small' : 'Big',
+                    confidence: confidence.toFixed(2)
+                };
+            } catch (error) {
+                console.error('Error in gaussian:', error);
+                return fallbackPrediction();
+            }
+        }
+
+        // Matrix Analysis
+        function matrix(nums) {
+            try {
+                const matrixSum = nums.slice(0, 4).reduce((a, b) => a + b, 0) * nums.slice(4).reduce((a, b) => a + b, 0);
+                const predicted = Math.round(matrixSum % 10);
+                const confidence = matrixSum > 100 ? 70 : 60;
+                return {
+                    prediction: predicted,
+                    bigSmall: predicted <= 4 ? 'Small' : 'Big',
+                    confidence: confidence.toFixed(2)
+                };
+            } catch (error) {
+                console.error('Error in matrix:', error);
+                return fallbackPrediction();
+            }
+        }
+
+        // Combined Analysis
+        function combined(nums) {
+            try {
+                const stat = statisticalAnalysis(nums);
+                const trend = trendAnalysis(nums);
+                const predicted = Math.round((stat.prediction + trend.prediction) / 2);
+                const confidence = Math.min((parseFloat(stat.confidence) + parseFloat(trend.confidence)) / 2, 85).toFixed(2);
+                return {
+                    prediction: predicted,
+                    bigSmall: predicted <= 4 ? 'Small' : 'Big',
+                    confidence
+                };
+            } catch (error) {
+                console.error('Error in combined:', error);
+                return fallbackPrediction();
+            }
+        }
+
+        // Trigonometric Functions
+        function trigonometric(nums) {
+            try {
+                const angle = nums.reduce((a, b) => a + b, 0) * Math.PI / 180;
+                const predicted = Math.round((Math.sin(angle) + Math.cos(angle)) * 5 % 10);
+                const confidence = nums.every(n => n > 5) ? 70 : 60;
+                return {
+                    prediction: Math.abs(predicted),
+                    bigSmall: Math.abs(predicted) <= 4 ? 'Small' : 'Big',
+                    confidence: confidence.toFixed(2)
+                };
+            } catch (error) {
+                console.error('Error in trigonometric:', error);
+                return fallbackPrediction();
+            }
+        }
+
+        // Fourier Analysis
+        function fourier(nums) {
+            try {
+                const freq = nums.map((n, i) => n * Math.cos(2 * Math.PI * i / nums.length)).reduce((a, b) => a + b, 0);
+                const predicted = Math.round(Math.abs(freq) % 10);
+                const confidence = freq > 10 ? 75 : 65;
+                return {
+                    prediction: predicted,
+                    bigSmall: predicted <= 4 ? 'Small' : 'Big',
+                    confidence: confidence.toFixed(2)
+                };
+            } catch (error) {
+                console.error('Error in fourier:', error);
+                return fallbackPrediction();
+            }
+        }
+
+        // Polynomial Regression
+        function polynomial(nums) {
+            try {
+                const x = Array.from({ length: nums.length }, (_, i) => i + 1);
+                const sumX = x.reduce((a, b) => a + b, 0);
+                const sumY = nums.reduce((a, b) => a + b, 0);
+                const sumXY = x.reduce((a, b, i) => a + b * nums[i], 0);
+                const sumX2 = x.reduce((a, b) => a + b * b, 0);
+                const slope = (nums.length * sumXY - sumX * sumY) / (nums.length * sumX2 - sumX * sumX);
+                const predicted = Math.round((nums[nums.length - 1] + slope) % 10);
+                const confidence = slope > 0 ? 70 : 60;
+                return {
+                    prediction: predicted < 0 ? predicted + 10 : predicted,
+                    bigSmall: (predicted < 0 ? predicted + 10 : predicted) <= 4 ? 'Small' : 'Big',
+                    confidence: confidence.toFixed(2)
+                };
+            } catch (error) {
+                console.error('Error in polynomial:', error);
+                return fallbackPrediction();
+            }
+        }
+
+        // Weighted Moving Average
+        function weightedMovingAverage(nums) {
+            try {
+                const history = validatePredictionHistory();
+                const recent = history.slice(-3).map(entry => entry.predictions.ensemble);
+                if (recent.length < 3) {
+                    const prediction = Math.round(Math.random() * 9);
+                    return {
+                        prediction,
+                        bigSmall: prediction <= 4 ? 'Small' : 'Big',
+                        confidence: "50.00"
+                    };
+                }
+
+                const weights = [0.5, 0.3, 0.2];
+                const weightedSum = recent.reduce((sum, val, i) => sum + val * weights[i], 0);
+                const predicted = Math.round(weightedSum % 10);
+                const confidence = recent.every((val, i) => i === 0 || Math.abs(val - recent[i - 1]) < 3) ? 80 : 60;
+                return {
+                    prediction: predicted,
+                    bigSmall: predicted <= 4 ? 'Small' : 'Big',
+                    confidence: confidence.toFixed(2)
+                };
+            } catch (error) {
+                console.error('Error in weightedMovingAverage:', error);
+                return fallbackPrediction();
+            }
+        }
+
+        // Pi-based Prediction
+        function piBasedPrediction(nums) {
+            try {
+                const sum = nums.reduce((a, b) => a + b, 0);
+                const piIndex = Math.abs(sum) % 100000;
+                const predicted = parseInt(piDigits[piIndex]);
+                const confidence = sum % 2 === 0 ? 65 : 55;
+                return {
+                    prediction: predicted,
+                    bigSmall: predicted <= 4 ? 'Small' : 'Big',
+                    confidence: confidence.toFixed(2)
+                };
+            } catch (error) {
+                console.error('Error in piBasedPrediction:', error);
+                return fallbackPrediction();
+            }
+        }
+
+        // Ensemble Prediction
+        function getEnsemblePrediction(nums) {
+            const predictions = {
+                statisticalAnalysis: statisticalAnalysis(nums),
+                patternRecognition: patternRecognition(nums),
+                trendAnalysis: trendAnalysis(nums),
+                linearGradient: linearGradient(nums),
+                innerImage: innerImage(nums),
+                composite: composite(nums),
+                gaussian: gaussian(nums),
+                matrix: matrix(nums),
+                combined: combined(nums),
+                trigonometric: trigonometric(nums),
+                fourier: fourier(nums),
+                polynomial: polynomial(nums),
+                weightedMovingAverage: weightedMovingAverage(nums),
+                piBased: piBasedPrediction(nums)
+            };
+
+            let weightedSum = 0;
+            let totalWeight = 0;
+            let validMethods = {};
+
+            for (const method in predictions) {
+                const pred = predictions[method];
+                if (typeof pred.prediction === 'number' && pred.prediction >= 0 && pred.prediction <= 9 && pred.confidence) {
+                    weightedSum += pred.prediction * predictionWeights[method];
+                    totalWeight += predictionWeights[method];
+                    validMethods[method] = pred;
+                }
+            }
+
+            if (totalWeight === 0) {
+                const prediction = Math.floor(Math.random() * 10);
+                return {
+                    ensemble: prediction,
+                    bigSmall: prediction <= 4 ? 'Small' : 'Big',
+                    details: predictions,
+                    confidence: "50.00"
+                };
+            }
+
+            const ensemblePrediction = Math.round(weightedSum / totalWeight);
+            const confidence = calculateOverallConfidence(validMethods);
+            return {
+                ensemble: ensemblePrediction,
+                bigSmall: ensemblePrediction <= 4 ? 'Small' : 'Big',
+                details: predictions,
+                confidence
+            };
+        }
+
+        function calculateOverallConfidence(predictions) {
+            const confidences = Object.values(predictions).map(p => parseFloat(p.confidence));
+            if (confidences.length === 0) return "50.00";
+            const avgConfidence = confidences.reduce((a, b) => a + b, 0) / confidences.length;
+            const consistency = confidences.every(c => Math.abs(c - avgConfidence) < 20) ? 10 : 0;
+            return Math.min(avgConfidence + consistency, 95).toFixed(2);
+        }
+
+        // Start Hack
+        async function startHack() {
+            if (!isAuthenticated) {
+                alert('Please login first.');
+                return;
+            }
+
+            playSound(clickSound);
+            const numbers = Array.from({ length: 8 }, (_, i) => {
+                const value = document.getElementById(`num${i + 1}`).value.trim();
+                const num = parseInt(value);
+                return isNaN(num) ? NaN : num;
+            });
+
+            const finalPredictionResult = document.getElementById('finalPredictionResult');
+            finalPredictionResult.classList.remove('shake');
+
+            if (numbers.some(num => isNaN(num) || num < 0 || num > 9)) {
+                finalPredictionResult.innerHTML = '<span class="error">Please enter 8 valid numbers (0-9).</span>';
+                finalPredictionResult.classList.add('shake');
+                return;
+            }
+
+            const startHackButton = document.getElementById('startHackButton');
+            startHackButton.disabled = true;
+            startHackButton.classList.add('loading');
+
+            try {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                const prediction = getEnsemblePrediction(numbers);
+                lastPrediction = prediction;
+
+                finalPredictionResult.innerHTML = `Predicted Number: ${prediction.ensemble} (<span class="${prediction.bigSmall.toLowerCase()}">${prediction.bigSmall}</span>, Confidence: ${prediction.confidence}%)`;
+                const resultsDiv = document.getElementById('predictionResults');
+                resultsDiv.innerHTML = `<h3>Prediction Details</h3><p>Ensemble: ${prediction.ensemble} (${prediction.bigSmall}, Confidence: ${prediction.confidence}%)</p>`;
+                for (const method in prediction.details) {
+                    resultsDiv.innerHTML += `<p>${method}: ${prediction.details[method].prediction} (${prediction.details[method].bigSmall}, ${prediction.details[method].confidence}%)</p>`;
+                }
+
+                document.getElementById('piPrediction').innerHTML = `Pi-based Prediction: ${prediction.details.piBased.prediction} (<span class="${prediction.details.piBased.bigSmall.toLowerCase()}">${prediction.details.piBased.bigSmall}</span>, Confidence: ${prediction.details.piBased.confidence}%)`;
+
+                const finalResults = document.getElementById('finalResults');
+                finalResults.innerHTML = `<p>Prediction: ${prediction.ensemble} (${prediction.bigSmall})</p><p>Confidence: ${prediction.confidence}%</p>`;
+                document.getElementById('resultsPopup').style.display = 'flex';
+                playSound(predictionSound);
+
+                const history = validatePredictionHistory();
+                history.push({ input: numbers, predictions: prediction, timestamp: new Date().toISOString() });
+                localStorage.setItem('predictionHistory', JSON.stringify(history.slice(-20)));
+                loadPredictionHistory();
+                updateAccuracy();
+                updateUserStats();
+
+                document.getElementById('feedbackSection').style.display = 'block';
+                document.getElementById('actualResult').value = '';
+
+                userSession.predictionsMade++;
+                localStorage.setItem('userSession', JSON.stringify(userSession));
+
+                const userSessions = JSON.parse(localStorage.getItem('userSessions')) || [];
+                userSessions.push(userSession);
+                localStorage.setItem('userSessions', JSON.stringify(userSessions.slice(-1000)));
+            } catch (error) {
+                console.error('Prediction error in startHack:', error);
+                finalPredictionResult.innerHTML = '<span class="error">Prediction failed. Please try again.</span>';
+                finalPredictionResult.classList.add('shake');
+            } finally {
+                startHackButton.disabled = false;
+                startHackButton.classList.remove('loading');
+            }
+        }
+
+        // Number Prediction Popup
+        function showNumberPopup() {
+            playSound(clickSound);
+            if (!lastPrediction) {
+                alert('Please make a prediction first by clicking "START HACK".');
+                return;
+            }
+            document.getElementById('numberResult').innerHTML = `Predicted Number: ${lastPrediction.ensemble} (<span class="${lastPrediction.bigSmall.toLowerCase()}">${lastPrediction.bigSmall}</span>, Confidence: ${lastPrediction.confidence}%)`;
+            document.getElementById('numberPopup').style.display = 'flex';
+        }
+
+        function closeNumberPopup() {
+            playSound(clickSound);
+            document.getElementById('numberPopup').style.display = 'none';
+        }
+
+        // Big/Small Signal Popup
+        function showSignalPopup() {
+            playSound(clickSound);
+            if (!lastPrediction) {
+                alert('Please make a prediction first by clicking "START HACK".');
+                return;
+            }
+            document.getElementById('signalResult').innerHTML = `
+                <p>Signal: <span class="${lastPrediction.bigSmall.toLowerCase()}">${lastPrediction.bigSmall}</span></p>
+                <p>Confidence: ${lastPrediction.confidence}%</p>
+            `;
+            document.getElementById('signalPopup').style.display = 'flex';
+        }
+
+        function closeSignalPopup() {
+            playSound(clickSound);
+            document.getElementById('signalPopup').style.display = 'none';
+        }
+
+        // Linear Gradient Popup
+        function showLinearPopup() {
+            playSound(clickSound);
+            const nums = Array.from({ length: 8 }, (_, i) => parseInt(document.getElementById(`num${i + 1}`).value) || 0);
+            const result = linearGradient(nums);
+            document.getElementById('linearResult').innerHTML = `Predicted Number: ${result.prediction} (<span class="${result.bigSmall.toLowerCase()}">${result.bigSmall}</span>, Confidence: ${result.confidence}%)`;
+            document.getElementById('linearPopup').style.display = 'flex';
+        }
+
+        function closeLinearPopup() {
+            playSound(clickSound);
+            document.getElementById('linearPopup').style.display = 'none';
+        }
+
+        function closeResultsPopup() {
+            playSound(clickSound);
+            document.getElementById('resultsPopup').style.display = 'none';
+        }
+
+        // Share Prediction
+        function sharePrediction() {
+            playSound(clickSound);
+            const predictionText = document.getElementById('finalResults').textContent;
+            const period = document.getElementById('resultsPeriodNumber').textContent;
+            const shareText = `${period}\n${predictionText}\nShared via KHANDY Prediction System`;
+            navigator.clipboard.writeText(shareText).then(() => {
+                alert('Prediction copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy prediction:', err);
+                alert('Failed to copy prediction. Please try again.');
+            });
+        }
+
+        // Submit Feedback
+        function submitFeedback() {
+            playSound(clickSound);
+            const actualResult = parseInt(document.getElementById('actualResult').value);
+            const feedbackRating = parseInt(document.getElementById('feedbackRating').value);
+
+            if (isNaN(actualResult) || actualResult < 0 || actualResult > 9) {
+                alert('Please enter a valid actual result (0-9).');
+                document.getElementById('actualResult').classList.add('shake');
+                return;
+            }
+
+            if (!lastPrediction) {
+                alert('No prediction available to provide feedback for.');
+                return;
+            }
+
+            const feedback = {
+                period: document.getElementById('periodNumber').textContent,
+                predicted: lastPrediction.ensemble,
+                actual: actualResult,
+                rating: feedbackRating,
+                timestamp: new Date().toISOString()
+            };
+
+            let feedbackHistory = JSON.parse(localStorage.getItem('feedbackHistory')) || [];
+            feedbackHistory.push(feedback);
+            localStorage.setItem('feedbackHistory', JSON.stringify(feedbackHistory.slice(-50)));
+
+            updateAccuracy();
+
+            document.getElementById('feedbackSection').style.display = 'none';
+            document.getElementById('actualResult').value = '';
+            alert('Feedback submitted successfully!');
+        }
+
+        // Update Accuracy
+        function updateAccuracy() {
+            let feedbackHistory = JSON.parse(localStorage.getItem('feedbackHistory')) || [];
+            const correctPredictions = feedbackHistory.filter(f => f.predicted === f.actual).length;
+            const totalPredictions = feedbackHistory.length;
+            const accuracy = totalPredictions > 0 ? (correctPredictions / totalPredictions) * 100 : 0;
+
+            document.getElementById('accuracyProgress').value = accuracy;
+            document.getElementById('accuracyText').textContent = `Accuracy: ${accuracy.toFixed(2)}% (${correctPredictions}/${totalPredictions})`;
+        }
+
+        // Update User Stats
+        function updateUserStats() {
+            if (userSession) {
+                document.getElementById('userStats').textContent = `User Stats: ${userSession.predictionsMade} predictions made`;
+            }
+        }
+
+        // Load Prediction History
+        function loadPredictionHistory() {
+            const history = validatePredictionHistory();
+            const historyTableBody = document.getElementById('historyTableBody');
+            historyTableBody.innerHTML = '';
+
+            history.slice(-10).reverse().forEach(entry => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="padding: 5px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">${entry.input.join(', ')}</td>
+                    <td style="padding: 5px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">${entry.predictions.ensemble}</td>
+                    <td style="padding: 5px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);"><span class="${entry.predictions.bigSmall.toLowerCase()}">${entry.predictions.bigSmall}</span></td>
+                    <td style="padding: 5px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">${entry.predictions.confidence}%</td>
+                `;
+                historyTableBody.appendChild(row);
+            });
+        }
+
+        // Download Prediction History
+        function downloadHistory() {
+            playSound(clickSound);
+            const history = validatePredictionHistory();
+            if (history.length === 0) {
+                alert('No prediction history available to download.');
+                return;
+            }
+
+            const csvContent = [
+                ['Timestamp', 'Input', 'Prediction (Number)', 'Big/Small', 'Confidence'],
+                ...history.map(entry => [
+                    entry.timestamp,
+                    entry.input.join(','),
+                    entry.predictions.ensemble,
+                    entry.predictions.bigSmall,
+                    entry.predictions.confidence + '%'
+                ])
+            ].map(row => row.join(',')).join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'prediction_history.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Initialize on Page Load
+        window.onload = function() {
+            const savedSession = localStorage.getItem('userSession');
+            if (savedSession) {
+                userSession = JSON.parse(savedSession);
+                isAuthenticated = true;
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('predictionPage').style.display = 'block';
+                loadPredictionHistory();
+                updateAccuracy();
+                updateUserStats();
+            }
+        };
+    </script>
+</body>
+</html>
